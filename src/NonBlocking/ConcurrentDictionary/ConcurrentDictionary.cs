@@ -926,6 +926,41 @@ namespace NonBlocking
             return tValue2;
         }
 
+        public TValue AddOrUpdate<TArg>(TKey key, Func<TKey, TArg, TValue> addValueFactory, Func<TKey, TValue, TArg, TValue> updateValueFactory, TArg arg)
+        {
+            if (addValueFactory == null)
+            {
+                throw new ArgumentNullException("addValueFactory");
+            }
+            if (updateValueFactory == null)
+            {
+                throw new ArgumentNullException("updateValueFactory");
+            }
+            TValue tValue2;
+            while (true)
+            {
+                TValue tValue;
+                if (this.TryGetValue(key, out tValue))
+                {
+                    tValue2 = updateValueFactory(key, tValue, arg);
+                    if (this.TryUpdate(key, tValue2, tValue))
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    tValue2 = addValueFactory(key, arg);
+                    if (this.TryAdd(key, tValue2))
+                    {
+                        break;
+                    }
+                }
+            }
+            return tValue2;
+        }
+
+
         /// <summary>
         /// Adds a key/value pair to the <see cref="ConcurrentDictionary{TKey,TValue}"/> if the key does not already 
         /// exist, or updates a key/value pair in the <see cref="ConcurrentDictionary{TKey,TValue}"/> if the key 
